@@ -1,5 +1,4 @@
 module.exports = function solveSudoku(matrix) {
-  function solveSudoku(matrix) {
   let solution = [];
   for (let i = 0; i < matrix.length; i++) {
     let row = [];
@@ -49,6 +48,7 @@ module.exports = function solveSudoku(matrix) {
   }
 
   return solution;
+
 }
 
 function indexToGrid(index) {
