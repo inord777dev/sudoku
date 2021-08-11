@@ -1,7 +1,7 @@
 module.exports = function solveSudoku(matrix) {
   const digits = [1, 2, 3, 4, 5, 6, 7, 8, 9];
   let solution = [], variants = [];
-  let attempt = [], attemptCount = 0;
+  let attempt = [];
   for (let i = 0; i < matrix.length; i++) {
     let solutionRow = [], variant = [];
     for (let j = 0; j < matrix.length; j++) {
@@ -98,14 +98,14 @@ module.exports = function solveSudoku(matrix) {
           let variantNew;
           let colAll = col.flat();
           variantNew = variants[i][j].filter(x => !colAll.includes(x));
-          if (variantNew.length) {
+          if (variantNew.length && variantNew.join('') != variants[i][j].join("")) {
             hasChanges = true;
             variants[i][j] = variantNew;
           }
 
           let rowAll = row.flat();
           variantNew = variants[i][j].filter(x => !rowAll.includes(x));
-          if (variantNew.length) {
+          if (variantNew.length && variantNew.join('') != variants[i][j].join("")) {
             hasChanges = true;
             variants[i][j] = variantNew;
           }
@@ -140,36 +140,41 @@ module.exports = function solveSudoku(matrix) {
       isSolved = solutionSolved(rows, cols, grids);
 
       if (!isSolved) {
+        let countVariant = 0, maxLength = 0;
+        let attemptCount = 0;
+        variants.map( x => { x.map(xx => {
+          if (xx.length) {
+            countVariant++;
+            maxLength =  Math.max(maxLength, xx.length);
+          }
+        })});
 
-        if (attempt.length) {
-          attempt[0][2]++;
-          solution = JSON.parse(JSON.stringify(attempt[0][0]));
-          variants = JSON.parse(JSON.stringify(attempt[0][1]));
-        } else {
-          attempt.push([JSON.parse(JSON.stringify(solution)), JSON.parse(JSON.stringify(variants))], attemptCount);
+        if (!attempt.length) {
+          attemptCount = 0;
+          attempt.push([JSON.parse(JSON.stringify(solution)), JSON.parse(JSON.stringify(variants)), attemptCount]);
+        } else if (countVariant == 0 || countVariant / maxLength != maxLength) {
+          let oldAttempt = attempt[attempt.length - 1];
+          attemptCount = ++oldAttempt[2];
+          solution = JSON.parse(JSON.stringify(oldAttempt[0]));
+          variants = JSON.parse(JSON.stringify(oldAttempt[1]));
         }
-        
 
-        let k = 0, count = 0;
+        let k = 0;
         while (k < solution.length) {
           let l = 0;
           while (l < solution.length) {
             if (!matrix[k][l] && variants[k][l].length) {
-              let tmp = variants[k][l];
-              if (tmp.length > 1) {
-                let index = tmp.indexOf(solution[k][l]);
-                if (index == tmp.length - 1) {
-                  solution[k][l] = tmp[0];
+                if (attemptCount >= variants[k][l].length) {
+                  attemptCount -= variants[k][l].length;
+                  l++;
+                  continue;
                 } else {
-                  solution[k][l] = tmp[index + 1];
-                  if (count >= attemptCount) {
-                    hasChanges = true;
-                    k = solution.length;
-                    break;
-                  }
+                  hasChanges = true;
+                  solution[k][l] = variants[k][l][attemptCount];
+                  variants[k][l] = [solution[k][l]];
+                  k = solution.length;
+                  break;
                 }
-                count++;
-              }
             }
             l++;
           }
@@ -178,7 +183,7 @@ module.exports = function solveSudoku(matrix) {
 
       }
 
-      
+
     }
 
   } while (hasChanges)
