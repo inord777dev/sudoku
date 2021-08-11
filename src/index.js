@@ -1,95 +1,138 @@
 module.exports = function solveSudoku(matrix) {
   const digits = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-  let solution = [], values = [], tmpGrids = [[[], [], []], [[], [], []], [[], [], []]];
+  let solution = [], variants = [];
+  let attempt = [];
   for (let i = 0; i < matrix.length; i++) {
+    let solutionRow = [], variant = [];
     for (let j = 0; j < matrix.length; j++) {
-      tmpGrids[indexToGrid(i)][indexToGrid(j)].push(matrix[i][j]);
-    }
-  }
-  for (let i = 0; i < matrix.length; i++) {
-    let row = [], rowValues = [];
-    for (let j = 0; j < matrix.length; j++) {
-      let tmpRow = [...matrix[i]], tmpCol = [];
-      for (let k = 0; k < matrix.length; k++) {
-        tmpCol.push(matrix[k][j]);
-      }
-      let value, tmp = [];
-      if (!matrix[i][j]) {
-        digits.map(x => {
-          if (!tmpRow.includes(x) && !tmpCol.includes(x)
-            && !tmpGrids[indexToGrid(i)][indexToGrid(j)].includes(x)) {
-            tmp.push(x);
-          }
-        });
-        value = tmp[0];
+      solutionRow.push(matrix[i][j]);
+      if (matrix[i][j] > 0) {
+        variant.push([]);
       } else {
-        value = matrix[i][j];
+        variant.push([...digits]);
       }
-      row.push(value);
-      rowValues.push(tmp);
     }
-    solution.push(row);
-    values.push(rowValues);
+    solution.push(solutionRow);
+    variants.push(variant);
   }
 
   let hasChanges;
   do {
     hasChanges = false;
 
-    tmpGrids = [[[], [], []], [[], [], []], [[], [], []]];
-    for (let i = 0; i < solution.length; i++) {
-      for (let j = 0; j < solution.length; j++) {
-        tmpGrids[indexToGrid(i)][indexToGrid(j)].push(solution[i][j]);
+    for (let i = 0; i < variants.length; i++) {
+      for (let j = 0; j < variants.length; j++) {
+        if (variants[i][j].length) {
+          let row = [], col = [];
+          for (let k = 0; k < variants.length; k++) {
+            if (k != i && variants[k][j].length <= 1) {
+              col.push(solution[k][j]);
+            }
+          };
+
+          for (let l = 0; l < variants.length; l++) {
+            if (l != j && variants[i][l].length <= 1) {
+              row.push(solution[i][l]);
+            }
+          };
+
+          col.map(x => {
+            let index = variants[i][j].indexOf(x);
+            if (index > -1) {
+              hasChanges = true;
+              variants[i][j].splice(index, 1);
+            }
+          });
+
+          row.map(x => {
+            let index = variants[i][j].indexOf(x);
+            if (index > -1) {
+              hasChanges = true;
+              variants[i][j].splice(index, 1);
+            }
+          });
+        }
+
       }
     }
 
-    for (let i = 0; i < values.length; i++) {
-      for (let j = 0; j < values.length; j++) {
-        if (values[i][j].length == 1) {
-          let value = values[i][j][0];
-          values[i][j].splice(0, 1);
-          for (let k = 0; k < values.length; k++) {
-            if (k != i && values[k][j].length > 1) {
-              let index = values[k][j].indexOf(value);
-              if (index > -1) {
-                hasChanges = true;
-                values[k][j].splice(index, 1);
-                solution[k][j] = values[k][j][0];
-                if (values[k][j].length > 1) {
-                  tmpGrids[indexToGrid(k)][indexToGrid(j)].map(x => {
-                    let index = values[k][j].indexOf(x);
-                    if (index > -1) {
-                      values[k][j].splice(index, 1);
-                      solution[k][j] = values[k][j][0];
-                    }
-                  })
-                }
-              }
+    tmpGrids = [[[], [], []], [[], [], []], [[], [], []]];
+    for (let i = 0; i < solution.length; i++) {
+      for (let j = 0; j < solution.length; j++) {
+        if (variants[i][j].length <= 1) {
+          tmpGrids[indexToGrid(i)][indexToGrid(j)].push(solution[i][j]);
+        }
+      }
+    }
+
+    for (let i = 0; i < variants.length; i++) {
+      for (let j = 0; j < variants.length; j++) {
+        if (variants[i][j].length) {
+          tmpGrids[indexToGrid(i)][indexToGrid(j)].map(x => {
+            let index = variants[i][j].indexOf(x);
+            if (index > -1) {
+              hasChanges = true;
+              variants[i][j].splice(index, 1);
             }
-            for (let l = 0; l < values.length; l++) {
-              if (l != j && values[i][l].length > 1) {
-                let index = values[i][l].indexOf(value);
-                if (index > -1) {
-                  hasChanges = true;
-                  values[i][l].splice(index, 1);
-                  solution[i][l] = values[i][l][0];
-                  if (values[i][l].length > 1) {
-                    tmpGrids[indexToGrid(i)][indexToGrid(l)].map(x => {
-                      let index = values[i][l].indexOf(x);
-                      if (index > -1) {
-                        values[i][l].splice(index, 1);
-                        solution[i][l] = values[i][l][0];
-                      }
-                    })
-                  }
-                }
-              }
+          })
+        }
+      }
+    }
+
+    for (let i = 0; i < variants.length; i++) {
+      for (let j = 0; j < variants.length; j++) {
+        if (variants[i][j].length > 1) {
+          let row = [], col = [];
+          for (let k = 0; k < variants.length; k++) {
+            if (k != i && variants[k][j].length >= 1) {
+              col.push(variants[k][j]);
             }
+          };
+
+          for (let l = 0; l < variants.length; l++) {
+            if (l != j && variants[i][l].length >= 1) {
+              row.push(variants[i][l]);
+            }
+          }
+
+          let variantNew;
+          let colAll = col.flat();
+          variantNew = variants[i][j].filter(x => !colAll.includes(x));
+          if (variantNew.length) {
+            hasChanges = true;
+            variants[i][j] = variantNew;
+          }
+
+          let rowAll = row.flat();
+          variantNew = variants[i][j].filter(x => !rowAll.includes(x));
+          if (variantNew.length) {
+            hasChanges = true;
+            variants[i][j] = variantNew;
+          }
+      }
+      }
+    }
+
+    if (!hasChanges) {
+      for (let i = 0; i < solution.length; i++) {
+        for (let j = 0; j < solution.length; j++) {
+          if (variants[i][j].length == 1) {
+            hasChanges = true;
+            solution[i][j] = variants[i][j].pop();
           }
         }
       }
     }
+
   } while (hasChanges)
+
+  // for (let i = 0; i < solution.length; i++) {
+  //   for (let j = 0; j < solution.length; j++) {
+  //     if (variants[i][j].length) {
+  //       solution[i][j] = variants[i][j][0];
+  //     }
+  //   }
+  // }
 
   let isSolved = false;
   while (!isSolved) {
@@ -113,8 +156,8 @@ module.exports = function solveSudoku(matrix) {
       while (k < solution.length) {
         let l = 0;
         while (l < solution.length) {
-          if (!matrix[k][l]) {
-            let tmp = values[k][l];
+          if (!matrix[k][l] && variants[k][l].length) {
+            let tmp = variants[k][l];
             if (tmp.length > 1) {
               let index = tmp.indexOf(solution[k][l]);
               if (index == tmp.length - 1) {
@@ -135,10 +178,6 @@ module.exports = function solveSudoku(matrix) {
   }
 
   return solution;
-}
-
-function valueRemove(value, values,) {
-
 }
 
 
