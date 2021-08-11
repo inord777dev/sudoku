@@ -1,7 +1,7 @@
 module.exports = function solveSudoku(matrix) {
   const digits = [1, 2, 3, 4, 5, 6, 7, 8, 9];
   let solution = [], variants = [];
-  let attempt = [];
+  let attempt = [], attemptCount = 0;
   for (let i = 0; i < matrix.length; i++) {
     let solutionRow = [], variant = [];
     for (let j = 0; j < matrix.length; j++) {
@@ -109,7 +109,7 @@ module.exports = function solveSudoku(matrix) {
             hasChanges = true;
             variants[i][j] = variantNew;
           }
-      }
+        }
       }
     }
 
@@ -124,58 +124,64 @@ module.exports = function solveSudoku(matrix) {
       }
     }
 
-  } while (hasChanges)
+    if (!hasChanges) {
+      let rows = [0, 0, 0, 0, 0, 0, 0, 0, 0],
+        cols = [0, 0, 0, 0, 0, 0, 0, 0, 0],
+        grids = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
 
-  // for (let i = 0; i < solution.length; i++) {
-  //   for (let j = 0; j < solution.length; j++) {
-  //     if (variants[i][j].length) {
-  //       solution[i][j] = variants[i][j][0];
-  //     }
-  //   }
-  // }
-
-  let isSolved = false;
-  while (!isSolved) {
-
-    let rows = [0, 0, 0, 0, 0, 0, 0, 0, 0],
-      cols = [0, 0, 0, 0, 0, 0, 0, 0, 0],
-      grids = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
-
-    for (let i = 0; i < solution.length; i++) {
-      for (let j = 0; j < solution.length; j++) {
-        rows[i] += solution[i][j];
-        cols[j] += solution[i][j];
-        grids[indexToGrid(i)][indexToGrid(j)] += solution[i][j];
+      for (let i = 0; i < solution.length; i++) {
+        for (let j = 0; j < solution.length; j++) {
+          rows[i] += solution[i][j];
+          cols[j] += solution[i][j];
+          grids[indexToGrid(i)][indexToGrid(j)] += solution[i][j];
+        }
       }
-    }
 
-    isSolved = solutionSolved(rows, cols, grids);
+      isSolved = solutionSolved(rows, cols, grids);
 
-    if (!isSolved) {
-      let k = 0;
-      while (k < solution.length) {
-        let l = 0;
-        while (l < solution.length) {
-          if (!matrix[k][l] && variants[k][l].length) {
-            let tmp = variants[k][l];
-            if (tmp.length > 1) {
-              let index = tmp.indexOf(solution[k][l]);
-              if (index == tmp.length - 1) {
-                solution[k][l] = tmp[0];
-              } else {
-                solution[k][l] = tmp[index + 1];
-                k = solution.length;
-                break;
+      if (!isSolved) {
+
+        if (attempt.length) {
+          attempt[0][2]++;
+          solution = JSON.parse(JSON.stringify(attempt[0][0]));
+          variants = JSON.parse(JSON.stringify(attempt[0][1]));
+        } else {
+          attempt.push([JSON.parse(JSON.stringify(solution)), JSON.parse(JSON.stringify(variants))], attemptCount);
+        }
+        
+
+        let k = 0, count = 0;
+        while (k < solution.length) {
+          let l = 0;
+          while (l < solution.length) {
+            if (!matrix[k][l] && variants[k][l].length) {
+              let tmp = variants[k][l];
+              if (tmp.length > 1) {
+                let index = tmp.indexOf(solution[k][l]);
+                if (index == tmp.length - 1) {
+                  solution[k][l] = tmp[0];
+                } else {
+                  solution[k][l] = tmp[index + 1];
+                  if (count >= attemptCount) {
+                    hasChanges = true;
+                    k = solution.length;
+                    break;
+                  }
+                }
+                count++;
               }
             }
+            l++;
           }
-          l++;
+          k++;
         }
-        k++;
+
       }
 
+      
     }
-  }
+
+  } while (hasChanges)
 
   return solution;
 }
